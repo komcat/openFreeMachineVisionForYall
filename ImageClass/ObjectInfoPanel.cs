@@ -1,5 +1,6 @@
 ﻿using System.Windows.Controls;
 using System.Windows;
+using System.Windows.Media;
 
 namespace OpenCVwpf.ImageClass
 {
@@ -8,11 +9,12 @@ namespace OpenCVwpf.ImageClass
         private readonly StackPanel _panel;
         private readonly Label _titleLabel;
         private readonly Grid _infoGrid;
+        private readonly Dictionary<string, IPropertyHandler> _propertyHandlers;
 
         public ObjectInfoPanel(StackPanel panel)
         {
             _panel = panel;
-            _panel.Background = System.Windows.Media.Brushes.WhiteSmoke;
+            _panel.Background = Brushes.WhiteSmoke;
 
             _titleLabel = new Label
             {
@@ -26,6 +28,13 @@ namespace OpenCVwpf.ImageClass
             _infoGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             _infoGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             _panel.Children.Add(_infoGrid);
+
+            // Initialize property handlers
+            _propertyHandlers = new Dictionary<string, IPropertyHandler>
+            {
+                { "Rectangle", new RectanglePropertyHandler() },
+                { "Line", new LinePropertyHandler() }
+            };
         }
 
         public void UpdateInfo(IDrawableObject obj)
@@ -39,21 +48,18 @@ namespace OpenCVwpf.ImageClass
                 return;
             }
 
+            // Display common properties
             AddInfoRow("Type:", obj.ObjectType);
             AddInfoRow("Name:", obj.Name);
 
-            if (obj is CustomLine line)
+            // Get specific properties using handler
+            if (_propertyHandlers.TryGetValue(obj.ObjectType, out var handler))
             {
-                var startPoint = new Point(line.MainLine.X1, line.MainLine.Y1);
-                var endPoint = new Point(line.MainLine.X2, line.MainLine.Y2);
-
-                double length = CalculateLength(startPoint, endPoint);
-                double angle = CalculateAngle(startPoint, endPoint);
-
-                AddInfoRow("Length:", $"{length:F2} pixels");
-                AddInfoRow("Angle:", $"{angle:F2}°");
-                AddInfoRow("Start:", $"({line.MainLine.X1:F1}, {line.MainLine.Y1:F1})");
-                AddInfoRow("End:", $"({line.MainLine.X2:F1}, {line.MainLine.Y2:F1})");
+                handler.UpdateProperties(obj);
+                foreach (var (label, value) in handler.GetProperties())
+                {
+                    AddInfoRow($"{label}:", value);
+                }
             }
         }
 
@@ -76,21 +82,6 @@ namespace OpenCVwpf.ImageClass
 
             _infoGrid.Children.Add(labelText);
             _infoGrid.Children.Add(valueText);
-        }
-
-        private double CalculateLength(Point start, Point end)
-        {
-            double dx = end.X - start.X;
-            double dy = end.Y - start.Y;
-            return Math.Sqrt(dx * dx + dy * dy);
-        }
-
-        private double CalculateAngle(Point start, Point end)
-        {
-            double dx = end.X - start.X;
-            double dy = end.Y - start.Y;
-            double angleRad = Math.Atan2(dy, dx);
-            return angleRad * (180 / Math.PI);
         }
 
         public void Clear()

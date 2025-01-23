@@ -12,9 +12,11 @@ namespace OpenCVwpf
         private CanvasDisplay _canvasDisplay;
         private ImageHandler _imageHandler;
         private LineDrawer _lineDrawer;
+        private RectangleDrawer _rectangleDrawer;
         private ObjectManager _objectManager;
         private PixelValueAnalyzer _pixelAnalyzer;
         private bool _isLineDrawingMode = false;
+        private bool _isRectangleDrawingMode = false;
         private ObjectInfoPanel _objectInfoPanel;
         public MainWindow()
         {
@@ -27,7 +29,8 @@ namespace OpenCVwpf
             _imageHandler = new ImageHandler(_canvasDisplay);
             _lineDrawer = new LineDrawer(DisplayCanvas, _objectManager, this);
             _pixelAnalyzer = new PixelValueAnalyzer(PixelPlot);
-
+            _rectangleDrawer = new RectangleDrawer(DisplayCanvas, _objectManager, this);
+            _objectInfoPanel = new ObjectInfoPanel(ObjectInfoStackPanel);
             // Load initial image
             LoadSampleImage();
 
@@ -38,7 +41,7 @@ namespace OpenCVwpf
             _objectManager.ObjectSelected += ObjectManager_ObjectSelected;
             _objectManager.ObjectDeleted += ObjectManager_ObjectDeleted;
 
-            _objectInfoPanel = new ObjectInfoPanel(ObjectInfoStackPanel);
+            
 
             
             // Ensure the canvas can receive keyboard focus
@@ -90,28 +93,25 @@ namespace OpenCVwpf
         {
             // Line button setup
             LineButton.Click += LineButton_Click;
+            RectangleButton.Click += RectangleButton_Click;
+            CircleButton.Click += CircleButton_Click;
         }
 
         private void LineButton_Click(object sender, RoutedEventArgs e)
         {
-            _isLineDrawingMode = !_isLineDrawingMode;
+            SetDrawingMode(_currentDrawingMode == DrawingMode.Line ? DrawingMode.None : DrawingMode.Line);
+            DisplayCanvas.Focus();
+        }
 
-            if (_isLineDrawingMode)
-            {
-                Log.Information("Line drawing mode activated");
-                _lineDrawer.StartDrawingMode();
-                LineButton.Background = Brushes.LightBlue;
-                DisplayCanvas.Cursor = Cursors.Cross;
-            }
-            else
-            {
-                Log.Information("Line drawing mode deactivated");
-                _lineDrawer.StopDrawingMode();
-                LineButton.Background = SystemColors.ControlBrush;
-                DisplayCanvas.Cursor = Cursors.Arrow;
-            }
+        private void RectangleButton_Click(object sender, RoutedEventArgs e)
+        {
+            SetDrawingMode(_currentDrawingMode == DrawingMode.Rectangle ? DrawingMode.None : DrawingMode.Rectangle);
+            DisplayCanvas.Focus();
+        }
 
-            // Ensure canvas keeps focus after button click
+        private void CircleButton_Click(object sender, RoutedEventArgs e)
+        {
+            SetDrawingMode(_currentDrawingMode == DrawingMode.Circle ? DrawingMode.None : DrawingMode.Circle);
             DisplayCanvas.Focus();
         }
 
@@ -119,6 +119,57 @@ namespace OpenCVwpf
         {
             // Load an image from the application directory
             _imageHandler.LoadImageFromAppPath("sample.png");
+        }
+
+        public enum DrawingMode
+        {
+            None,
+            Line,
+            Rectangle,
+            Circle
+        }
+
+        // Add as class field
+        private DrawingMode _currentDrawingMode = DrawingMode.None;
+
+        private void SetDrawingMode(DrawingMode newMode)
+        {
+            // Disable current mode
+            switch (_currentDrawingMode)
+            {
+                case DrawingMode.Line:
+                    _lineDrawer.StopDrawingMode();
+                    LineButton.Background = SystemColors.ControlBrush;
+                    break;
+                case DrawingMode.Rectangle:
+                    _rectangleDrawer.StopDrawingMode();
+                    RectangleButton.Background = SystemColors.ControlBrush;
+                    break;
+                case DrawingMode.Circle:
+                    // CircleDrawer.StopDrawingMode(); // To be implemented
+                    CircleButton.Background = SystemColors.ControlBrush;
+                    break;
+            }
+
+            // Enable new mode
+            _currentDrawingMode = newMode;
+            DisplayCanvas.Cursor = newMode == DrawingMode.None ? Cursors.Arrow : Cursors.Cross;
+
+            switch (newMode)
+            {
+                case DrawingMode.Line:
+                    _lineDrawer.StartDrawingMode();
+                    LineButton.Background = Brushes.LightBlue;
+                    break;
+                case DrawingMode.Rectangle:
+                    _rectangleDrawer.StartDrawingMode();
+                    RectangleButton.Background = Brushes.LightBlue;
+                    break;
+                case DrawingMode.Circle:
+                    // CircleDrawer.StartDrawingMode(); // To be implemented
+                    CircleButton.Background = Brushes.LightBlue;
+                    break;
+            }
         }
     }
 }
