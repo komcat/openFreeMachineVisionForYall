@@ -1,0 +1,73 @@
+﻿<Window x:Class="OpenCVwpf.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:OpenCVwpf"
+        xmlns:ScottPlot="clr-namespace:ScottPlot.WPF;assembly=ScottPlot.WPF"
+        
+        mc:Ignorable="d"
+        Title="MainWindow" Height="Auto" Width="Auto">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="160"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="300"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Tool Buttons Panel -->
+        <StackPanel Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" 
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Left" 
+                    Margin="10,5,10,5">
+            <Button x:Name="LineButton" 
+                    Width="60" Height="60" 
+                    Margin="5,0,5,0"
+                    Content="Line"/>
+            <Button x:Name="CircleButton" 
+                    Width="60" Height="60" 
+                    Margin="5,0,5,0"
+                    Content="Circle"/>
+            <Button x:Name="RectangleButton" 
+                    Width="60" Height="60" 
+                    Margin="5,0,5,0"
+                    Content="Rectangle"/>
+        </StackPanel>
+
+        <!-- Pixel Value Plot -->
+        <Border Grid.Row="0" Grid.Column="3" 
+                BorderBrush="Gray" BorderThickness="1" 
+                Margin="5">
+            <ScottPlot:WpfPlot x:Name="PixelPlot" 
+                              Height="200"/>
+        </Border>
+        
+        <!-- Display Canvas -->
+        <Canvas x:Name="DisplayCanvas"
+                Grid.Row="1"
+                Grid.Column="1"
+                Grid.RowSpan="2"
+                Grid.ColumnSpan="3"
+                Background="Transparent"
+                ClipToBounds="True"
+                MinWidth="1280" MinHeight="1024">
+        </Canvas>
+
+        <!-- Object Information Panel -->
+        <Border Grid.Row="1" Grid.Column="4"
+                BorderBrush="Gray" BorderThickness="1"
+                Margin="5">
+            <ScrollViewer>
+                <StackPanel x:Name="ObjectInfoStackPanel" Margin="10"/>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</Window>
