@@ -10,6 +10,7 @@ namespace OpenCVwpf.ImageClass
         private readonly Label _titleLabel;
         private readonly Grid _infoGrid;
         private readonly Dictionary<string, IPropertyHandler> _propertyHandlers;
+        private IDrawableObject _currentObject;
 
         public ObjectInfoPanel(StackPanel panel)
         {
@@ -39,23 +40,50 @@ namespace OpenCVwpf.ImageClass
 
         public void UpdateInfo(IDrawableObject obj)
         {
+            UnsubscribeFromCurrentObject();
+
+            _currentObject = obj;
+            if (_currentObject is CustomLine line)
+            {
+                line.LinePositionChanged += Object_PositionChanged;
+            }
+
+            UpdateDisplay();
+        }
+
+        private void Object_PositionChanged(object sender, EventArgs e)
+        {
+            UpdateDisplay();
+        }
+
+        private void UnsubscribeFromCurrentObject()
+        {
+            if (_currentObject is CustomLine line)
+            {
+                line.LinePositionChanged -= Object_PositionChanged;
+            }
+            _currentObject = null;
+        }
+
+        private void UpdateDisplay()
+        {
             _infoGrid.Children.Clear();
             _infoGrid.RowDefinitions.Clear();
 
-            if (obj == null)
+            if (_currentObject == null)
             {
                 AddInfoRow("No object selected", "");
                 return;
             }
 
             // Display common properties
-            AddInfoRow("Type:", obj.ObjectType);
-            AddInfoRow("Name:", obj.Name);
+            AddInfoRow("Type:", _currentObject.ObjectType);
+            AddInfoRow("Name:", _currentObject.Name);
 
             // Get specific properties using handler
-            if (_propertyHandlers.TryGetValue(obj.ObjectType, out var handler))
+            if (_propertyHandlers.TryGetValue(_currentObject.ObjectType, out var handler))
             {
-                handler.UpdateProperties(obj);
+                handler.UpdateProperties(_currentObject);
                 foreach (var (label, value) in handler.GetProperties())
                 {
                     AddInfoRow($"{label}:", value);
@@ -86,6 +114,7 @@ namespace OpenCVwpf.ImageClass
 
         public void Clear()
         {
+            UnsubscribeFromCurrentObject();
             _infoGrid.Children.Clear();
             _infoGrid.RowDefinitions.Clear();
             AddInfoRow("No object selected", "");

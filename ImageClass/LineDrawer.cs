@@ -145,6 +145,7 @@ namespace OpenCVwpf.ImageClass
 
                     // Create actual custom line
                     var customLine = new CustomLine(_canvas, _startPoint, endPoint, _objectManager);
+                    //customLine.SetHitAreaEnabled(false);  // Add this line
                     customLine.AddToCanvas();
 
                     // Add to object manager with name input

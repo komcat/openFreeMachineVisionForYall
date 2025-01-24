@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
 namespace OpenCVwpf.ImageClass
@@ -17,6 +18,13 @@ namespace OpenCVwpf.ImageClass
         public Rectangle EndPoint { get; private set; }
         private Rectangle _hitArea;
         private TextBlock _nameLabel;
+
+        // Add to class fields
+        private readonly PointMarker _pointMarker;
+        private readonly PointDetector _pointDetector;
+
+        private bool _hitAreaEnabled = true;
+
         public bool IsSelected { get; private set; }
         private string _name;
         public event EventHandler LinePositionChanged;
@@ -48,7 +56,7 @@ namespace OpenCVwpf.ImageClass
             MainLine = new Line
             {
                 Stroke = Brushes.Cyan,
-                StrokeThickness = 1,
+                StrokeThickness = 0.5,
                 X1 = start.X,
                 Y1 = start.Y,
                 X2 = end.X,
@@ -65,9 +73,9 @@ namespace OpenCVwpf.ImageClass
 
             _hitArea = new Rectangle
             {
-                Fill = new SolidColorBrush(Color.FromArgb(30, 255, 0, 0)),  // Slightly more visible red
-                Stroke = Brushes.Red,  // Red border
-                StrokeThickness = 1,   // Border thickness
+                Fill = new SolidColorBrush(Color.FromArgb(0, 255, 0, 0)),  // Fully transparent
+                Stroke = null,  // Remove border
+                StrokeThickness = 0.5,
                 Cursor = Cursors.Hand
             };
 
@@ -75,12 +83,12 @@ namespace OpenCVwpf.ImageClass
             MainLine.MouseLeftButtonDown += Line_MouseLeftButtonDown;
 
             _hitArea.MouseEnter += (s, e) => {
-                MainLine.StrokeThickness = 2;
+                MainLine.StrokeThickness = 0.5;
                 //Log.Debug("Mouse entered hit area - Line: {LineName}", Name);
             };
 
             _hitArea.MouseLeave += (s, e) => {
-                if (!IsSelected) MainLine.StrokeThickness = 1;
+                if (!IsSelected) MainLine.StrokeThickness = 0.5;
                 //Log.Debug("Mouse left hit area - Line: {LineName}", Name);
             };
 
@@ -90,14 +98,51 @@ namespace OpenCVwpf.ImageClass
 
             UpdateHitArea();
             UpdateLabelPosition();
+            OnLinePositionChanged();
 
             _canvas.Children.Add(_hitArea);
             Panel.SetZIndex(_hitArea, 0);
             Panel.SetZIndex(_nameLabel, 1);
 
             HideControlPoints();
+
+
+            _pointMarker = new PointMarker(canvas);
+            _pointDetector = new PointDetector(20, 5);
+
+            // Add after UpdateHitArea() and UpdateLabelPosition()
+            UpdatePointMarkers();
         }
 
+
+        public void SetHitAreaEnabled(bool enabled)
+        {
+            _hitAreaEnabled = enabled;
+            if (_hitArea != null)
+            {
+                _hitArea.IsHitTestVisible = enabled;
+                _hitArea.Visibility = enabled ? Visibility.Visible : Visibility.Hidden;
+            }
+        }
+
+        // Add new method
+        private void UpdatePointMarkers()
+        {
+            var canvas = MainLine.Parent as Canvas;
+            if (canvas == null) return;
+
+            var image = canvas.Children.OfType<Image>().FirstOrDefault()?.Source as BitmapSource;
+            if (image == null) return;
+
+            var (positions, values) = SamplePixelsAlongLine();
+            if (positions != null && values != null)
+            {
+                var points = _pointDetector.DetectPoints(positions, values,
+                    new Point(MainLine.X1, MainLine.Y1),
+                    new Point(MainLine.X2, MainLine.Y2));
+                _pointMarker.UpdatePoints(points);
+            }
+        }
         private void UpdateHitArea()
         {
             double minX = Math.Min(MainLine.X1, MainLine.X2);
@@ -224,6 +269,7 @@ namespace OpenCVwpf.ImageClass
                 }
 
                 UpdateControlPointsPosition();
+                UpdatePointMarkers();
                 LinePositionChanged?.Invoke(this, EventArgs.Empty);
             }
         }
@@ -272,6 +318,7 @@ namespace OpenCVwpf.ImageClass
             MainLine.Stroke = Brushes.Orange;
             _nameLabel.Foreground = Brushes.Orange;
             ShowControlPoints();
+            UpdatePointMarkers();  // Add this line
         }
 
         public void Deselect()
@@ -307,6 +354,7 @@ namespace OpenCVwpf.ImageClass
 
         public void RemoveFromCanvas()
         {
+            _pointMarker.ClearMarkers();
             _canvas.Children.Remove(MainLine);
             _canvas.Children.Remove(StartPoint);
             _canvas.Children.Remove(MidPoint);
@@ -318,6 +366,52 @@ namespace OpenCVwpf.ImageClass
         public void UpdatePosition()
         {
             UpdateControlPointsPosition();
+        }
+
+        protected virtual void OnLinePositionChanged()
+        {
+            LinePositionChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        // Add helper method
+        private (double[] positions, double[] values) SamplePixelsAlongLine()
+        {
+            var canvas = MainLine.Parent as Canvas;
+            if (canvas == null) return (null, null);
+
+            var image = canvas.Children.OfType<Image>().FirstOrDefault()?.Source as BitmapSource;
+            if (image == null) return (null, null);
+
+            int stride = (image.PixelWidth * image.Format.BitsPerPixel + 7) / 8;
+            byte[] pixels = new byte[image.PixelHeight * stride];
+            image.CopyPixels(pixels, stride, 0);
+
+            double dx = MainLine.X2 - MainLine.X1;
+            double dy = MainLine.Y2 - MainLine.Y1;
+            double length = Math.Sqrt(dx * dx + dy * dy);
+            int numSamples = Math.Max((int)length, 2);
+
+            double[] positions = new double[numSamples];
+            double[] values = new double[numSamples];
+
+            for (int i = 0; i < numSamples; i++)
+            {
+                double t = i / (double)(numSamples - 1);
+                int x = (int)(MainLine.X1 + t * dx);
+                int y = (int)(MainLine.Y1 + t * dy);
+
+                x = Math.Max(0, Math.Min(x, image.PixelWidth - 1));
+                y = Math.Max(0, Math.Min(y, image.PixelHeight - 1));
+
+                int index = y * stride + x * (image.Format.BitsPerPixel / 8);
+                if (index < pixels.Length)
+                {
+                    values[i] = pixels[index];
+                }
+                positions[i] = i;
+            }
+
+            return (positions, values);
         }
     }
 }
