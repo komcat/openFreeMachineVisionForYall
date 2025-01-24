@@ -47,6 +47,10 @@ namespace OpenCVwpf.ImageClass
             {
                 line.LinePositionChanged += Object_PositionChanged;
             }
+            if (_currentObject is CustomRectangle rect)
+            {
+                rect.RectanglePositionChanged += Object_PositionChanged;
+            }
 
             UpdateDisplay();
         }
@@ -62,8 +66,13 @@ namespace OpenCVwpf.ImageClass
             {
                 line.LinePositionChanged -= Object_PositionChanged;
             }
+            if (_currentObject is CustomRectangle rect)
+            {
+                rect.RectanglePositionChanged -= Object_PositionChanged;
+            }
             _currentObject = null;
         }
+
 
         private void UpdateDisplay()
         {
@@ -79,15 +88,78 @@ namespace OpenCVwpf.ImageClass
             // Display common properties
             AddInfoRow("Type:", _currentObject.ObjectType);
             AddInfoRow("Name:", _currentObject.Name);
+            AddInfoRow("Purpose:", _currentObject.Purpose);
 
-            // Get specific properties using handler
-            if (_propertyHandlers.TryGetValue(_currentObject.ObjectType, out var handler))
+            // Get purpose-specific data
+            var data = _currentObject.GetOutputData();
+
+            switch (_currentObject.Purpose)
             {
-                handler.UpdateProperties(_currentObject);
-                foreach (var (label, value) in handler.GetProperties())
+                case "PointDetection":
+                    DisplayPointDetectionInfo(data);
+                    break;
+                case "AreaMeasurement":
+                    DisplayAreaMeasurementInfo(data);
+                    break;
+                default:
+                    DisplayGenericInfo(data);
+                    break;
+            }
+        }
+
+        private void DisplayPointDetectionInfo(Dictionary<string, object> data)
+        {
+            if (data.TryGetValue("Length", out var length))
+                AddInfoRow("Length:", $"{length:F2} pixels");
+
+            if (data.TryGetValue("Angle", out var angle))
+                AddInfoRow("Angle:", $"{angle:F2}°");
+
+            if (data.TryGetValue("DetectedPoints", out var points))
+            {
+                var detectedPoints = points as List<(int Position, string Type, Point Location)>;
+                if (detectedPoints != null)
                 {
-                    AddInfoRow($"{label}:", value);
+                    int riseCount = detectedPoints.Count(p => p.Type == "Rise");
+                    int fallCount = detectedPoints.Count(p => p.Type == "Fall");
+                    AddInfoRow("Detected Points:", $"Rise: {riseCount}, Fall: {fallCount}");
+
+                    for (int i = 0; i < detectedPoints.Count; i++)
+                    {
+                        var point = detectedPoints[i];
+                        AddInfoRow($"Point {i + 1}:",
+                            $"{point.Type} at ({point.Location.X:F1}, {point.Location.Y:F1})");
+                    }
                 }
+            }
+        }
+
+        private void DisplayAreaMeasurementInfo(Dictionary<string, object> data)
+        {
+            if (data.TryGetValue("Width", out var width))
+                AddInfoRow("Width:", $"{width:F2} pixels");
+
+            if (data.TryGetValue("Height", out var height))
+                AddInfoRow("Height:", $"{height:F2} pixels");
+
+            if (data.TryGetValue("Area", out var area))
+                AddInfoRow("Area:", $"{area:F2} pixels²");
+
+            if (data.TryGetValue("Perimeter", out var perimeter))
+                AddInfoRow("Perimeter:", $"{perimeter:F2} pixels");
+
+            if (data.TryGetValue("Rotation", out var rotation))
+                AddInfoRow("Rotation:", $"{rotation:F2}°");
+
+            if (data.TryGetValue("Center", out var center) && center is Point centerPoint)
+                AddInfoRow("Center:", $"({centerPoint.X:F1}, {centerPoint.Y:F1})");
+        }
+
+        private void DisplayGenericInfo(Dictionary<string, object> data)
+        {
+            foreach (var kvp in data)
+            {
+                AddInfoRow(kvp.Key + ":", kvp.Value.ToString());
             }
         }
 

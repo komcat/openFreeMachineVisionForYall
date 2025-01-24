@@ -22,7 +22,7 @@ namespace OpenCVwpf.ImageClass
         // Add to class fields
         private readonly PointMarker _pointMarker;
         private readonly PointDetector _pointDetector;
-
+        public string Purpose => "PointDetection";
         private bool _hitAreaEnabled = true;
 
         public bool IsSelected { get; private set; }
@@ -372,6 +372,54 @@ namespace OpenCVwpf.ImageClass
         {
             LinePositionChanged?.Invoke(this, EventArgs.Empty);
         }
+        public Dictionary<string, object> GetOutputData()
+        {
+            var data = new Dictionary<string, object>();
+            var (positions, values) = SamplePixelsAlongLine();
+
+            if (positions != null && values != null)
+            {
+                var points = _pointDetector.DetectPoints(positions, values,
+                    new Point(MainLine.X1, MainLine.Y1),
+                    new Point(MainLine.X2, MainLine.Y2));
+
+                data["DetectedPoints"] = points;
+                data["PixelValues"] = values;
+                data["Positions"] = positions;
+                data["LineStart"] = new Point(MainLine.X1, MainLine.Y1);
+                data["LineEnd"] = new Point(MainLine.X2, MainLine.Y2);
+                data["Length"] = CalculateLength();
+                data["Angle"] = CalculateAngle();
+            }
+
+            return data;
+        }
+
+        private double CalculateLength()
+        {
+            double dx = MainLine.X2 - MainLine.X1;
+            double dy = MainLine.Y2 - MainLine.Y1;
+            return Math.Sqrt(dx * dx + dy * dy);
+        }
+
+        private double CalculateAngle()
+        {
+            double dx = MainLine.X2 - MainLine.X1;
+            double dy = MainLine.Y2 - MainLine.Y1;
+            return Math.Atan2(dy, dx) * (180 / Math.PI);
+        }
+
+        public void UpdateDetectionParameters(Dictionary<string, double> parameters)
+        {
+            if (parameters.TryGetValue("threshold", out double threshold) &&
+                parameters.TryGetValue("windowSize", out double windowSize))
+            {
+                _pointDetector.UpdateParameters(threshold, (int)windowSize);
+                UpdatePointMarkers();
+                LinePositionChanged?.Invoke(this, EventArgs.Empty); // This will trigger info panel update
+            }
+        }
+
 
         // Add helper method
         private (double[] positions, double[] values) SamplePixelsAlongLine()

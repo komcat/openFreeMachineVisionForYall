@@ -16,7 +16,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="160"/>
+            <ColumnDefinition Width="250"/>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="Auto"/>
@@ -67,6 +67,15 @@
                 Margin="5">
             <ScrollViewer>
                 <StackPanel x:Name="ObjectInfoStackPanel" Margin="10"/>
+            </ScrollViewer>
+        </Border>
+
+        <!-- Detection Parameter -->
+        <Border Grid.Row="1" Grid.Column="0" Grid.RowSpan="2"
+         BorderBrush="Gray" BorderThickness="1"
+         Margin="5">
+            <ScrollViewer>
+                <StackPanel x:Name="ObjectDectionParameter" Margin="10"/>
             </ScrollViewer>
         </Border>
     </Grid>

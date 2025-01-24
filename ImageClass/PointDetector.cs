@@ -5,15 +5,20 @@ namespace OpenCVwpf.ImageClass
 {
     public class PointDetector
     {
-        private readonly double _threshold;
-        private readonly int _windowSize;
+        private double _threshold;
+        private int _windowSize;
+
 
         public PointDetector(double threshold = 20, int windowSize = 5)
         {
             _threshold = threshold;
             _windowSize = windowSize;
         }
-
+        public void UpdateParameters(double threshold, int windowSize)
+        {
+            _threshold = threshold;
+            _windowSize = windowSize;
+        }
         public List<(int Position, string Type, Point Location)> DetectPoints(double[] positions, double[] values, Point start, Point end)
         {
             var points = new List<(int Position, string Type, Point Location)>();

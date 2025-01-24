@@ -23,8 +23,8 @@ namespace OpenCVwpf.ImageClass
         private RotateTransform _rotateTransform;
         private const double CONTROL_POINT_SIZE = 10;
         private Point dragStart;
-
-
+        public string Purpose => "AreaMeasurement";
+        public event EventHandler RectanglePositionChanged;
         public string Name
         {
             get => _name;
@@ -247,6 +247,7 @@ namespace OpenCVwpf.ImageClass
 
                 UpdateControlPointsPosition();
                 UpdateRotation();
+                OnRectanglePositionChanged(); // Add this
             }
         }
 
@@ -286,6 +287,7 @@ namespace OpenCVwpf.ImageClass
             _rotationAngle += deltaAngle;
             UpdateRotation();
             dragStart = currentPos;
+            OnRectanglePositionChanged(); // Add this
         }
 
         private void HandleCentroidDrag(Point currentPos)
@@ -297,6 +299,7 @@ namespace OpenCVwpf.ImageClass
             Canvas.SetTop(MainRectangle, Canvas.GetTop(MainRectangle) + deltaY);
             dragStart = currentPos;
             UpdateControlPointsPosition();
+            OnRectanglePositionChanged(); // Add this
         }
 
         // Add new method for updating rotation
@@ -387,6 +390,42 @@ namespace OpenCVwpf.ImageClass
         public void UpdatePosition()
         {
             UpdateControlPointsPosition();
+        }
+        protected virtual void OnRectanglePositionChanged()
+        {
+            RectanglePositionChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+
+
+        public Dictionary<string, object> GetOutputData()
+        {
+            var data = new Dictionary<string, object>();
+
+            double left = Canvas.GetLeft(MainRectangle);
+            double top = Canvas.GetTop(MainRectangle);
+            Point center = GetRectangleCenter();
+
+            data["Width"] = MainRectangle.Width;
+            data["Height"] = MainRectangle.Height;
+            data["Area"] = MainRectangle.Width * MainRectangle.Height;
+            data["Position"] = new Point(left, top);
+            data["Center"] = center;
+            data["Rotation"] = _rotationAngle;
+
+            // Calculate corners with rotation
+            var corners = new Point[4];
+            corners[0] = RotatePoint(new Point(left, top), center, _rotationAngle);
+            corners[1] = RotatePoint(new Point(left + MainRectangle.Width, top), center, _rotationAngle);
+            corners[2] = RotatePoint(new Point(left + MainRectangle.Width, top + MainRectangle.Height), center, _rotationAngle);
+            corners[3] = RotatePoint(new Point(left, top + MainRectangle.Height), center, _rotationAngle);
+            data["Corners"] = corners;
+
+            // Calculate perimeter
+            double perimeter = 2 * (MainRectangle.Width + MainRectangle.Height);
+            data["Perimeter"] = perimeter;
+
+            return data;
         }
     }
 }

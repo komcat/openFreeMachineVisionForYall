@@ -10,7 +10,7 @@ namespace OpenCVwpf.ImageClass
         private readonly Canvas _canvas;
         private readonly List<UIElement> _markers = new();
         private const double MARKER_SIZE = 5;
-        private const double STROKE_THICKNESS = 1;
+        private const double STROKE_THICKNESS = 2;
 
         public PointMarker(Canvas canvas)
         {
@@ -35,7 +35,7 @@ namespace OpenCVwpf.ImageClass
                 Y1 = location.Y - MARKER_SIZE / 2,
                 X2 = location.X + MARKER_SIZE / 2,
                 Y2 = location.Y + MARKER_SIZE / 2,
-                Stroke = type == "Rise" ? Brushes.Cyan : Brushes.Cyan,
+                Stroke = type == "Rise" ? Brushes.OrangeRed : Brushes.PeachPuff,
                 StrokeThickness = STROKE_THICKNESS
             };
 
@@ -45,7 +45,7 @@ namespace OpenCVwpf.ImageClass
                 Y1 = location.Y + MARKER_SIZE / 2,
                 X2 = location.X + MARKER_SIZE / 2,
                 Y2 = location.Y - MARKER_SIZE / 2,
-                Stroke = type == "Rise" ? Brushes.Cyan : Brushes.Cyan,
+                Stroke = type == "Rise" ? Brushes.OrangeRed : Brushes.PeachPuff,
                 StrokeThickness = STROKE_THICKNESS
             };
 

@@ -18,6 +18,9 @@ namespace OpenCVwpf
         private bool _isLineDrawingMode = false;
         private bool _isRectangleDrawingMode = false;
         private ObjectInfoPanel _objectInfoPanel;
+
+        private DetectionParameterManager _parameterManager;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -31,6 +34,11 @@ namespace OpenCVwpf
             _pixelAnalyzer = new PixelValueAnalyzer(PixelPlot);
             _rectangleDrawer = new RectangleDrawer(DisplayCanvas, _objectManager, this);
             _objectInfoPanel = new ObjectInfoPanel(ObjectInfoStackPanel);
+            // Add after other initializations
+            _parameterManager = new DetectionParameterManager(ObjectDectionParameter);
+
+
+
             // Load initial image
             LoadSampleImage();
 
@@ -51,44 +59,42 @@ namespace OpenCVwpf
 
         private void ObjectManager_ObjectSelected(object sender, IDrawableObject obj)
         {
-            if(obj == null)
+            if (obj == null)
             {
-                
-                _objectInfoPanel.UpdateInfo(null);  // Clear panel
+                _objectInfoPanel.UpdateInfo(null);
                 _pixelAnalyzer.DetachFromCurrentLine();
+                _parameterManager.UpdateParameters(null);
                 return;
             }
+
             Log.Information("Object selected: {Type}", obj.GetType().Name);
 
             // Update info panel
             _objectInfoPanel.UpdateInfo(obj);
+            _parameterManager.UpdateParameters(obj);
 
             if (obj is CustomLine line)
             {
                 var currentBitmap = _canvasDisplay.GetCurrentBitmap();
                 if (currentBitmap != null)
                 {
+                    _parameterManager.SubscribeToParameters("PointDetection",
+                        (s, parameters) => line.UpdateDetectionParameters(parameters));
                     Log.Information("Attaching pixel analyzer to line: {LineName}", line.Name);
                     _pixelAnalyzer.AttachToLine(line, currentBitmap);
                 }
-                else
-                {
-                    Log.Warning("No bitmap available for analysis");
-                }
-            }
-            else
-            {
-                _pixelAnalyzer.DetachFromCurrentLine();
-            }
-        }
-        private void ObjectManager_ObjectDeleted(object sender, IDrawableObject obj)
-        {
-            if (obj is CustomLine)
-            {
-                _pixelAnalyzer.DetachFromCurrentLine();
             }
         }
 
+        private void ObjectManager_ObjectDeleted(object sender, IDrawableObject obj)
+        {
+            if (obj is CustomLine line)
+            {
+                _parameterManager.UnsubscribeFromParameters("PointDetection",
+                    (s, parameters) => line.UpdateDetectionParameters(parameters));
+                _pixelAnalyzer.DetachFromCurrentLine();
+            }
+        }
         private void InitializeToolButtons()
         {
             // Line button setup
