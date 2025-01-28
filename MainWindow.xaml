@@ -40,6 +40,18 @@
                     Width="60" Height="60" 
                     Margin="5,0,5,0"
                     Content="Rectangle"/>
+            <Button x:Name="CornerDetectButton" 
+                    Width="60" Height="60" 
+                    Margin="5,0,5,0"
+                    Content="Corner Detect"/>
+            <Button x:Name="CircleDetectButton" 
+                    Width="60" Height="60" 
+                    Margin="5,0,5,0"
+                    Content="Circle Detect"/>
+            <Button x:Name="EdgeDetectButton" 
+                    Width="60" Height="60" 
+                    Margin="5,0,5,0"
+                    Content="Edge Detect"/>
         </StackPanel>
 
         <!-- Pixel Value Plot -->

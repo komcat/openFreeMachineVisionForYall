@@ -85,16 +85,17 @@ namespace OpenCVwpf.ImageClass
                 return;
             }
 
-            // Display common properties
             AddInfoRow("Type:", _currentObject.ObjectType);
             AddInfoRow("Name:", _currentObject.Name);
             AddInfoRow("Purpose:", _currentObject.Purpose);
 
-            // Get purpose-specific data
             var data = _currentObject.GetOutputData();
 
             switch (_currentObject.Purpose)
             {
+                case "CornerDetection":
+                    DisplayCornerDetectionInfo(data);
+                    break;
                 case "PointDetection":
                     DisplayPointDetectionInfo(data);
                     break;
@@ -154,7 +155,30 @@ namespace OpenCVwpf.ImageClass
             if (data.TryGetValue("Center", out var center) && center is Point centerPoint)
                 AddInfoRow("Center:", $"({centerPoint.X:F1}, {centerPoint.Y:F1})");
         }
+        private void DisplayCornerDetectionInfo(Dictionary<string, object> data)
+        {
+            // Display basic rectangle info
+            if (data.TryGetValue("Width", out var width))
+                AddInfoRow("Width:", $"{width:F2} pixels");
+            if (data.TryGetValue("Height", out var height))
+                AddInfoRow("Height:", $"{height:F2} pixels");
 
+            // Display detected corners
+            if (data.TryGetValue("DetectedCorners", out var corners) && corners is List<Point> detectedCorners)
+            {
+                AddInfoRow("Total Corners:", detectedCorners.Count.ToString());
+
+                for (int i = 0; i < detectedCorners.Count; i++)
+                {
+                    var corner = detectedCorners[i];
+                    AddInfoRow($"Corner {i + 1}:", $"({corner.X:F1}, {corner.Y:F1})");
+                }
+            }
+
+            // Display corner strength/quality if available
+            if (data.TryGetValue("CornerStrengths", out var strengths))
+                AddInfoRow("Corner Strengths:", strengths.ToString());
+        }
         private void DisplayGenericInfo(Dictionary<string, object> data)
         {
             foreach (var kvp in data)

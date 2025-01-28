@@ -9,6 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="OpenCvSharp4" Version="4.10.0.20241108" />
+    <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.10.0.20241108" />
     <PackageReference Include="ScottPlot" Version="5.0.53" />
     <PackageReference Include="ScottPlot.WPF" Version="5.0.53" />
     <PackageReference Include="Serilog" Version="4.2.0" />

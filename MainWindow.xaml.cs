@@ -101,6 +101,7 @@ namespace OpenCVwpf
             LineButton.Click += LineButton_Click;
             RectangleButton.Click += RectangleButton_Click;
             CircleButton.Click += CircleButton_Click;
+            CornerDetectButton.Click += CornerDetectButton_Click;
         }
 
         private void LineButton_Click(object sender, RoutedEventArgs e)
@@ -120,7 +121,11 @@ namespace OpenCVwpf
             SetDrawingMode(_currentDrawingMode == DrawingMode.Circle ? DrawingMode.None : DrawingMode.Circle);
             DisplayCanvas.Focus();
         }
-
+        private void CornerDetectButton_Click(object sender, RoutedEventArgs e)
+        {
+            SetDrawingMode(_currentDrawingMode == DrawingMode.CornerDetection ? DrawingMode.None : DrawingMode.CornerDetection);
+            DisplayCanvas.Focus();
+        }
         private void LoadSampleImage()
         {
             // Load an image from the application directory
@@ -132,7 +137,8 @@ namespace OpenCVwpf
             None,
             Line,
             Rectangle,
-            Circle
+            Circle,
+            CornerDetection
         }
 
         // Add as class field
@@ -155,6 +161,10 @@ namespace OpenCVwpf
                     // CircleDrawer.StopDrawingMode(); // To be implemented
                     CircleButton.Background = SystemColors.ControlBrush;
                     break;
+                case DrawingMode.CornerDetection:
+                    _rectangleDrawer.StopDrawingMode();
+                    CornerDetectButton.Background = SystemColors.ControlBrush;
+                    break;
             }
 
             // Enable new mode
@@ -174,6 +184,10 @@ namespace OpenCVwpf
                 case DrawingMode.Circle:
                     // CircleDrawer.StartDrawingMode(); // To be implemented
                     CircleButton.Background = Brushes.LightBlue;
+                    break;
+                case DrawingMode.CornerDetection:
+                    _rectangleDrawer.StartDrawingMode("CornerDetection");
+                    CornerDetectButton.Background = Brushes.LightBlue;
                     break;
             }
         }

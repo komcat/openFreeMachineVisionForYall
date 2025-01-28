@@ -15,6 +15,7 @@ namespace OpenCVwpf.ImageClass
         private Point _startPoint;
         private Rectangle _previewRect;
         private bool _isDrawingMode;
+        private string _currentPurpose;
 
         public RectangleDrawer(Canvas canvas, ObjectManager objectManager, Window owner)
         {
@@ -24,14 +25,14 @@ namespace OpenCVwpf.ImageClass
             _isDrawingMode = false;
         }
 
-        public void StartDrawingMode()
+        public void StartDrawingMode(string purpose = "AreaMeasurement")
         {
+            _currentPurpose = purpose;
             _isDrawingMode = true;
             _canvas.MouseLeftButtonDown += Canvas_MouseLeftButtonDown;
             _canvas.MouseMove += Canvas_MouseMove;
             _canvas.MouseLeftButtonUp += Canvas_MouseLeftButtonUp;
             _canvas.Focus();
-            Log.Information("Rectangle drawing mode started");
         }
 
         public void StopDrawingMode()
@@ -89,11 +90,8 @@ namespace OpenCVwpf.ImageClass
             if (_isDrawingMode && _previewRect != null)
             {
                 Point endPoint = e.GetPosition(_canvas);
-
-                // Remove preview rectangle
                 _canvas.Children.Remove(_previewRect);
 
-                // Calculate final dimensions
                 double width = Math.Abs(endPoint.X - _startPoint.X);
                 double height = Math.Abs(endPoint.Y - _startPoint.Y);
                 Point topLeft = new Point(
@@ -101,14 +99,14 @@ namespace OpenCVwpf.ImageClass
                     Math.Min(endPoint.Y, _startPoint.Y)
                 );
 
-                // Create actual custom rectangle if size is meaningful
                 if (width > 5 && height > 5)
                 {
-                    var customRect = new CustomRectangle(_canvas, topLeft, width, height, _objectManager);
-                    customRect.AddToCanvas();
-                    _objectManager.AddObject(customRect, _owner);
-                    _objectManager.SelectObject(customRect);
-                    Log.Information($"New rectangle created: {customRect.Name}");
+                    var factory = RectangleFactories.GetFactory(_currentPurpose);
+                    var rectangle = factory.CreateRectangle(_canvas, topLeft, width, height, _objectManager);
+
+                    rectangle.AddToCanvas();
+                    _objectManager.AddObject(rectangle, _owner);
+                    _objectManager.SelectObject(rectangle);
                 }
 
                 _previewRect = null;

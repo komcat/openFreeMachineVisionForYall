@@ -23,7 +23,7 @@ namespace OpenCVwpf.ImageClass
         private RotateTransform _rotateTransform;
         private const double CONTROL_POINT_SIZE = 10;
         private Point dragStart;
-        public string Purpose => "AreaMeasurement";
+        public virtual string Purpose => "AreaMeasurement";
         public event EventHandler RectanglePositionChanged;
         public string Name
         {
@@ -54,7 +54,7 @@ namespace OpenCVwpf.ImageClass
                 Height = height,
                 Stroke = Brushes.Cyan,
                 StrokeThickness = 1,
-                Fill = new SolidColorBrush(Color.FromArgb(30, 0, 255, 255))
+                //Fill = new SolidColorBrush(Color.FromArgb(30, 0, 255, 255))
             };
 
             // Set initial position
@@ -375,7 +375,7 @@ namespace OpenCVwpf.ImageClass
             _canvas.Children.Add(_nameLabel);
         }
 
-        public void RemoveFromCanvas()
+        public virtual void RemoveFromCanvas()
         {
             _canvas.Children.Remove(MainRectangle);
             foreach (var point in _controlPoints)
@@ -398,7 +398,7 @@ namespace OpenCVwpf.ImageClass
 
 
 
-        public Dictionary<string, object> GetOutputData()
+        public virtual Dictionary<string, object> GetOutputData()
         {
             var data = new Dictionary<string, object>();
 
